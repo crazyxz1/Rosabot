@@ -1,0 +1,101 @@
+import discord
+from discord.ext import commands
+import asyncio
+
+intents = discord.Intents.default()
+intents.messages = True
+intents.guilds = True
+intents.message_content = True  # Necessário para comandos com prefixo
+
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+# 🔹 Sistema de Slash Commands
+tree = bot.tree  # Usado para slash commands
+
+@bot.event
+async def on_ready():
+    await bot.tree.sync()  # Sincroniza os Slash Commands
+    print(f"Bot {bot.user} está online!")
+
+# 🟢 Comando com Prefixo: Ping
+@bot.command()
+async def ping(ctx):
+    await ctx.send("🏓 Pong!")
+
+# 🔵 Slash Command: Ping
+@tree.command(name="ping", description="Veja a latência do bot")
+async def ping_slash(interaction: discord.Interaction):
+    await interaction.response.send_message("🏓 Pong!", ephemeral=True)
+
+# 🟢 Comando com Prefixo: Avatar
+@bot.command()
+async def avatar(ctx, user: discord.Member = None):
+    user = user or ctx.author
+    await ctx.send(f"🖼️ Avatar de {user.mention}: {user.avatar.url}")
+
+# 🔵 Slash Command: Avatar
+@tree.command(name="avatar", description="Veja o avatar de um usuário")
+async def avatar_slash(interaction: discord.Interaction, user: discord.Member = None):
+    user = user or interaction.user
+    await interaction.response.send_message(f"🖼️ Avatar de {user.mention}: {user.avatar.url}")
+
+# 🟢 Comando com Prefixo: UserInfo
+@bot.command()
+async def userinfo(ctx, user: discord.Member = None):
+    user = user or ctx.author
+    embed = discord.Embed(title=f"Informações de {user.name}", color=discord.Color.blue())
+    embed.set_thumbnail(url=user.avatar.url)
+    embed.add_field(name="🆔 ID", value=user.id, inline=False)
+    embed.add_field(name="📆 Criado em", value=user.created_at.strftime("%d/%m/%Y"), inline=False)
+    await ctx.send(embed=embed)
+
+# 🔵 Slash Command: UserInfo
+@tree.command(name="userinfo", description="Veja informações sobre um usuário")
+async def userinfo_slash(interaction: discord.Interaction, user: discord.Member = None):
+    user = user or interaction.user
+    embed = discord.Embed(title=f"Informações de {user.name}", color=discord.Color.blue())
+    embed.set_thumbnail(url=user.avatar.url)
+    embed.add_field(name="🆔 ID", value=user.id, inline=False)
+    embed.add_field(name="📆 Criado em", value=user.created_at.strftime("%d/%m/%Y"), inline=False)
+    await interaction.response.send_message(embed=embed)
+
+# 🟢 Comando com Prefixo: Ajuda
+@bot.command()
+async def ajuda(ctx):
+    embed = discord.Embed(
+        title="📜 Lista de Comandos",
+        description="Aqui estão os comandos disponíveis no bot:",
+        color=discord.Color.green()
+    )
+    embed.add_field(name="`!ping` / `/ping`", value="Veja a latência do bot.", inline=False)
+    embed.add_field(name="`!avatar @usuário` / `/avatar`", value="Veja o avatar de um usuário.", inline=False)
+    embed.add_field(name="`!userinfo @usuário` / `/userinfo`", value="Veja informações sobre um usuário.", inline=False)
+    embed.add_field(name="`!ajuda` / `/ajuda`", value="Mostra esta lista de comandos.", inline=False)
+    embed.add_field(name="`/desligar`", value="Desliga o bot (apenas admins).", inline=False)
+    await ctx.send(embed=embed)
+
+# 🔵 Slash Command: Ajuda
+@tree.command(name="ajuda", description="Mostra a lista de comandos disponíveis")
+async def ajuda_slash(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="📜 Lista de Comandos",
+        description="Aqui estão os comandos disponíveis no bot:",
+        color=discord.Color.green()
+    )
+    embed.add_field(name="`!ping` / `/ping`", value="Veja a latência do bot.", inline=False)
+    embed.add_field(name="`!avatar @usuário` / `/avatar`", value="Veja o avatar de um usuário.", inline=False)
+    embed.add_field(name="`!userinfo @usuário` / `/userinfo`", value="Veja informações sobre um usuário.", inline=False)
+    embed.add_field(name="`!ajuda` / `/ajuda`", value="Mostra esta lista de comandos.", inline=False)
+    embed.add_field(name="`/desligar`", value="Desliga o bot (apenas admins).", inline=False)
+    await interaction.response.send_message(embed=embed, ephemeral=False)
+
+# 🔴 Comando para Desligar o Bot (Apenas Admins)
+@tree.command(name="desligar", description="Desliga o bot (apenas para administradores)")
+async def desligar(interaction: discord.Interaction):
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("❌ Você não tem permissão para desligar o bot!", ephemeral=False)
+        return
+    
+    await interaction.response.send_message("🔴 O bot está desligando...", ephemeral=False)
+    await bot.close()
+    
